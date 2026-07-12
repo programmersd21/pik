@@ -113,7 +113,12 @@ jobs:
           fi
           gh release create "v$VERSION" --title "v$VERSION" --generate-notes
           shopt -s nullglob
-          for f in artifacts/*/*; do
-            echo "Uploading $f"
-            gh release upload "v$VERSION" "$f" --clobber
+          ASSETS=(artifacts/*/*)
+          echo "Found ${#ASSETS[@]} artifacts:"
+          for f in "${ASSETS[@]}"; do
+            echo "  - $f"
+          done
+          for f in "${ASSETS[@]}"; do
+            echo "Uploading $f..."
+            gh release upload "v$VERSION" "$f" --clobber || echo "Failed to upload $f"
           done
