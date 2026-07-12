@@ -119,6 +119,8 @@ jobs:
             echo "  - $f"
           done
           for f in "${ASSETS[@]}"; do
-            echo "Uploading $f..."
-            gh release upload "v$VERSION" "$f" --clobber || echo "Failed to upload $f"
+            dir=$(basename "$(dirname "$f")")
+            name="$dir"
+            echo "Uploading $f as $name..."
+            gh release upload "v$VERSION" "$f" --name "$name" --clobber || echo "Failed to upload $f"
           done
