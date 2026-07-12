@@ -68,11 +68,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
-
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.target }}
@@ -139,13 +137,26 @@ jobs:
             exit 1
           fi
 
+          # Rename each file to its unique asset name before uploading.
+          # gh release upload --clobber matches on the underlying filename,
+          # not on --label, so multiple binaries all literally named "pik"
+          # would otherwise overwrite each other one-by-one.
+          mkdir -p /tmp/release-assets
+          RENAMED=()
+          for f in "${ASSETS[@]}"; do
+            dir=$(basename "$(dirname "$f")")
+            dest="/tmp/release-assets/${dir}"
+            cp "$f" "$dest"
+            RENAMED+=("$dest")
+          done
+
           gh release create "v$VERSION" --title "v$VERSION" --generate-notes
 
           FAILED=0
-          for f in "${ASSETS[@]}"; do
-            dir=$(basename "$(dirname "$f")")
-            echo "Uploading $f as $dir..."
-            if ! gh release upload "v$VERSION" "$f#$dir" --clobber; then
+          for f in "${RENAMED[@]}"; do
+            name=$(basename "$f")
+            echo "Uploading $f as $name..."
+            if ! gh release upload "v$VERSION" "$f" --clobber; then
               echo "Failed to upload $f"
               FAILED=1
             fi
