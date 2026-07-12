@@ -8,6 +8,7 @@ Minimal interactive line picker for the command line.
 [![Stars](https://img.shields.io/github/stars/programmersd21/pik?style=for-the-badge&logo=github&logoColor=white&label=Stars&labelColor=000000&color=F5A623)](https://github.com/programmersd21/pik/stargazers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-585DEC?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=000000)](LICENSE)
 [![Made with Rust](https://img.shields.io/badge/Made%20with-Rust-F74C00?style=for-the-badge&logo=rust&logoColor=white&labelColor=000000)](https://www.rust-lang.org/)
+[![AUR](https://img.shields.io/badge/AUR-pik--bin-1793D1?style=for-the-badge&logo=archlinux&logoColor=white&labelColor=000000)](https://aur.archlinux.org/packages/pik-bin)
 
 Read newline-separated choices from stdin or a file and select one interactively.
 
