@@ -1,0 +1,8 @@
+/target/
+*.pdb
+*.swp
+*~
+.DS_Store
+Thumbs.db
+*.log
+Cargo.lock

@@ -1,0 +1,18 @@
+[package]
+name = "pik"
+version = "0.1.0"
+edition = "2021"
+description = "The minimal interactive line picker for the command line"
+license = "MIT"
+repository = "https://github.com/programmersd21/pik"
+keywords = ["cli", "terminal", "picker", "selector", "interactive"]
+categories = ["command-line-utilities"]
+
+[dependencies]
+crossterm = "0.28"
+unicode-width = "0.1"
+rand = "0.8"
+
+[[bin]]
+name = "pik"
+path = "src/main.rs"

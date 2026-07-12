@@ -1,0 +1,106 @@
+name: Release
+
+on:
+  push:
+    paths:
+      - 'Cargo.toml'
+    branches:
+      - main
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version_changed: ${{ steps.check.outputs.changed }}
+      version: ${{ steps.extract.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: Check if version changed
+        id: check
+        run: |
+          if git diff HEAD^ HEAD -- Cargo.toml | grep -q '^[+-]version = '; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Extract version
+        id: extract
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          VERSION=$(grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+  build:
+    needs: check-version
+    if: needs.check-version.outputs.version_changed == 'true'
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            artifact_name: pik
+            asset_name: pik-linux-x86_64
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact_name: pik
+            asset_name: pik-macos-x86_64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact_name: pik
+            asset_name: pik-macos-aarch64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: pik.exe
+            asset_name: pik-windows-x86_64.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      
+      - name: Install musl-tools
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get install -y musl-tools
+      
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+      
+      - name: Strip binary
+        if: matrix.os != 'windows-latest'
+        run: strip target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+
+  release:
+    needs: [check-version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ needs.check-version.outputs.version }}"
+          gh release create "v$VERSION" \
+            --title "v$VERSION" \
+            --generate-notes \
+            artifacts/*/* \
+            || echo "Release already exists"
