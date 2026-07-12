@@ -101,7 +101,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-      
+
       - name: Create release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -111,10 +111,9 @@ jobs:
             echo "Release v$VERSION already exists — skipping"
             exit 0
           fi
+          gh release create "v$VERSION" --title "v$VERSION" --generate-notes
           shopt -s nullglob
-          ASSETS=(artifacts/*/*)
-          if [ ${#ASSETS[@]} -eq 0 ]; then
-            gh release create "v$VERSION" --title "v$VERSION" --generate-notes
-          else
-            gh release create "v$VERSION" --title "v$VERSION" --generate-notes "${ASSETS[@]}"
-          fi
+          for f in artifacts/*/*; do
+            echo "Uploading $f"
+            gh release upload "v$VERSION" "$f" --clobber
+          done
