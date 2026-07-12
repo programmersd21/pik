@@ -7,6 +7,11 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      force:
+        description: Force release regardless of version change
+        type: boolean
+        default: false
 
 jobs:
   check-version:
@@ -22,12 +27,14 @@ jobs:
       - name: Check if version changed
         id: check
         run: |
-          if git diff HEAD^ HEAD -- Cargo.toml | grep -q '^[+-]version = '; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force }}" = "true" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          elif git diff HEAD^ HEAD -- Cargo.toml | grep -q '^[+-]version = '; then
             echo "changed=true" >> $GITHUB_OUTPUT
           else
             echo "changed=false" >> $GITHUB_OUTPUT
           fi
-      
+
       - name: Extract version
         id: extract
         if: steps.check.outputs.changed == 'true'
@@ -37,7 +44,7 @@ jobs:
 
   build:
     needs: check-version
-    if: needs.check-version.outputs.version_changed == 'true'
+    if: needs.check-version.outputs.version_changed == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force)
     strategy:
       matrix:
         include:
