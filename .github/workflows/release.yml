@@ -6,6 +6,7 @@ on:
       - 'Cargo.toml'
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   check-version:
