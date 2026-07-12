@@ -68,14 +68,20 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
+
       - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
 
       - name: Install musl-tools
         if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get install -y musl-tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
 
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
@@ -120,8 +126,6 @@ jobs:
             exit 0
           fi
 
-          gh release create "v$VERSION" --title "v$VERSION" --generate-notes
-
           shopt -s nullglob
           ASSETS=(artifacts/*/*)
           echo "Found ${#ASSETS[@]} artifacts:"
@@ -129,10 +133,13 @@ jobs:
             echo "  - $f"
           done
 
-          if [ "${#ASSETS[@]}" -eq 0 ]; then
-            echo "No artifacts found to upload — failing"
+          EXPECTED=4
+          if [ "${#ASSETS[@]}" -ne "$EXPECTED" ]; then
+            echo "Expected $EXPECTED artifacts, found ${#ASSETS[@]} — aborting release"
             exit 1
           fi
+
+          gh release create "v$VERSION" --title "v$VERSION" --generate-notes
 
           FAILED=0
           for f in "${ASSETS[@]}"; do
